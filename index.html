@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Régimes de feux au Québec</title>
+
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --header-bg:    #2C3E50;
+      --accent:       #5b9bd5;
+      --panel-bg:     #f9f9f9;
+      --panel-border: #dde2e8;
+      --box-bg:       #ffffff;
+      --box-shadow:   0 2px 8px rgba(0,0,0,0.08);
+      --text-main:    #2a2a2a;
+      --text-muted:   #6b7280;
+      --text-label:   #374151;
+    }
+
+    html, body { height: 100%; font-family: 'Source Sans 3', sans-serif; background: var(--panel-bg); color: var(--text-main); overflow: hidden; }
+
+    #header {
+      height: 56px; background: var(--header-bg);
+      display: flex; align-items: center;
+      padding: 0 20px; gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: relative; z-index: 10;
+    }
+    #header .icon { font-size: 22px; flex-shrink: 0; }
+    #header h1 {
+      font-family: 'Oswald', sans-serif; font-size: 13.5px; font-weight: 600;
+      letter-spacing: 1.3px; text-transform: uppercase; color: #fff; line-height: 1.25;
+    }
+
+    #app { display: flex; height: calc(100vh - 56px); }
+
+    #panel {
+      width: 680px; min-width: 680px;
+      background: var(--panel-bg);
+      border-right: 1px solid var(--panel-border);
+      display: flex; flex-direction: column;
+      overflow-y: auto; padding: 18px 16px; gap: 16px;
+    }
+    .panel-section { display: flex; flex-direction: column; gap: 7px; }
+    .panel-label {
+      font-family: 'Oswald', sans-serif; font-size: 11px;
+      letter-spacing: 1.6px; text-transform: uppercase; color: var(--text-muted);
+    }
+
+    #info-box {
+      background: var(--box-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px; padding: 11px 13px;
+      box-shadow: var(--box-shadow);
+      display: flex; flex-direction: column; gap: 6px; min-height: 72px;
+    }
+    .info-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .info-key {
+      font-size: 11px; letter-spacing: 0.8px;
+      text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
+    }
+    .info-val {
+      font-family: 'Oswald', sans-serif; font-size: 14px;
+      color: var(--text-main); text-align: right;
+    }
+    .info-val.big { font-size: 20px; color: var(--accent); }
+    .info-empty {
+      color: var(--text-muted); font-size: 13px;
+      text-align: center; margin: auto; line-height: 1.5;
+    }
+
+    #chart-wrap {
+      background: var(--box-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px; padding: 12px; flex: 1;
+      box-shadow: var(--box-shadow);
+    }
+    #myChart { width: 100% !important; }
+
+    .divider { border: none; border-top: 1px solid var(--panel-border); }
+
+    /* Tooltip carte */
+    #map-tooltip {
+      position: absolute; z-index: 20;
+      background: rgba(255,255,255,0.97);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px; padding: 10px 14px;
+      pointer-events: none; display: none;
+      min-width: 160px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .tt-zone {
+      font-family: 'Oswald', sans-serif; font-size: 18px;
+      font-weight: 600; margin-bottom: 6px;
+    }
+    .tt-row { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; margin-top: 3px; }
+    .tt-key { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+    .tt-val { font-family: 'Oswald', sans-serif; font-size: 13px; color: var(--text-main); }
+
+    #map { flex: 1; position: relative; }
+    #map-container { width: 100%; height: 100%; }
+
+    .zone-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 16px; font-weight: 700; color: #fff;
+      text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 4px #000, 0 0 8px #000;
+      pointer-events: none; white-space: nowrap;
+    }
+
+    #basemap-switch {
+      position: absolute; top: 10px; right: 10px; z-index: 5;
+      display: flex; background: rgba(255,255,255,0.95);
+      border: 1px solid #d1d5db; border-radius: 6px;
+      overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .bm-btn {
+      padding: 6px 13px; font-family: 'Source Sans 3', sans-serif;
+      font-size: 12px; color: var(--text-muted); cursor: pointer;
+      border: none; background: transparent;
+      border-right: 1px solid #d1d5db;
+      transition: background 0.15s, color 0.15s; white-space: nowrap;
+    }
+    .bm-btn:last-child { border-right: none; }
+    .bm-btn.active { background: var(--header-bg); color: #fff; }
+    .bm-btn:hover:not(.active) { background: #f3f4f6; color: var(--text-main); }
+
+    #loading {
+      position: absolute; inset: 0; background: #f9f9f9;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; z-index: 100; transition: opacity 0.5s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    #loading-msg { font-family: 'Oswald', sans-serif; letter-spacing: 2px; font-size: 13px; color: var(--text-muted); text-transform: uppercase; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #panel::-webkit-scrollbar { width: 5px; }
+    #panel::-webkit-scrollbar-track { background: transparent; }
+    #panel::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Chargement des données…</p>
+</div>
+
+<div id="header">
+  <span class="icon">🔥</span>
+  <h1>Régimes de feux au Québec</h1>
+</div>
+
+<div id="app">
+  <div id="panel">
+
+    <div class="panel-section">
+      <span class="panel-label">Zone sélectionnée</span>
+      <div id="info-box">
+        <span class="info-empty">Cliquez sur une zone de la carte</span>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="panel-section" style="flex:1;">
+      <span class="panel-label">Superficie (km²)</span>
+      <div id="chart-wrap">
+        <canvas id="myChart" height="260"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="map">
+    <div id="map-container"></div>
+    <div id="map-tooltip"></div>
+    <div id="basemap-switch">
+      <button class="bm-btn active" data-bm="neutre">Neutre</button>
+      <button class="bm-btn"        data-bm="satellite">Satellite</button>
+      <button class="bm-btn"        data-bm="sombre">Sombre</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function googleSatStyle() {
+  return {
+    version: 8,
+    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+    sources: { 'gsat': { type:'raster', tiles:[
+      'https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      'https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      'https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+    ], tileSize:256, attribution:'© Google' }},
+    layers: [{ id:'gsat-layer', type:'raster', source:'gsat', paint:{ 'raster-opacity': 0.75 } }]
+  };
+}
+const STYLE_URLS = {
+  neutre:    'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  satellite: googleSatStyle(),
+  sombre:    'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+};
+
+let map, chartInst;
+let currentBm   = 'neutre';
+let zonesGJ     = null;
+let provGJ      = null;
+let selectedId  = null;
+let zoneMarkers = [];
+
+function fmtNum(n) {
+  if (!n && n !== 0) return '—';
+  return new Intl.NumberFormat('fr-CA', { maximumFractionDigits: 0 }).format(n);
+}
+
+function initChart() {
+  chartInst = new Chart(document.getElementById('myChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: ['—'],
+      datasets: [{ data: [0], backgroundColor: '#d1d5db', borderRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: c => fmtNum(c.raw) + ' km²' }
+      }},
+      scales: {
+        x: { ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:11, weight:'600' } }, grid: { color:'rgba(0,0,0,0.05)' } },
+        y: { ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:10 }, callback: v => fmtNum(v) }, grid: { color:'rgba(0,0,0,0.06)' } }
+      }
+    }
+  });
+}
+
+function updateChart(zone) {
+  if (!zone) {
+    chartInst.data.labels = ['—'];
+    chartInst.data.datasets[0].data = [0];
+    chartInst.data.datasets[0].backgroundColor = '#d1d5db';
+  } else {
+    const sup = zone.properties.SUPERFICIE != null ? zone.properties.SUPERFICIE / 1000 : 0;
+    const col = zone.properties.Couleur_hex || '#5b9bd5';
+    chartInst.data.labels = [zone.properties.ZONE_ID];
+    chartInst.data.datasets[0].data = [sup];
+    chartInst.data.datasets[0].backgroundColor = col + 'cc';
+  }
+  chartInst.update();
+}
+
+function updateInfoBox(zone) {
+  const box = document.getElementById('info-box');
+  if (!zone) {
+    box.innerHTML = '<span class="info-empty">Cliquez sur une zone de la carte</span>';
+    return;
+  }
+  const p = zone.properties;
+  box.innerHTML = `
+    <div class="info-row"><span class="info-key">Zone</span><span class="info-val big">${p.ZONE_ID || '—'}</span></div>
+    <div class="info-row"><span class="info-key">Cycle de feu</span><span class="info-val">${p.CYCLE_FEU != null ? p.CYCLE_FEU + ' ans' : '—'}</span></div>
+    <div class="info-row"><span class="info-key">Superficie</span><span class="info-val">${fmtNum(p.SUPERFICIE != null ? p.SUPERFICIE / 1000 : null)} km²</span></div>`;
+}
+
+const tooltip = document.getElementById('map-tooltip');
+function showTooltip(e, feat) {
+  const p = feat.properties;
+  const col = p.Couleur_hex || '#5b9bd5';
+  tooltip.innerHTML = `
+    <div class="tt-zone" style="color:${col}">${p.ZONE_ID || '—'}</div>
+    <div class="tt-row"><span class="tt-key">Cycle de feu</span><span class="tt-val">${p.CYCLE_FEU != null ? p.CYCLE_FEU + ' ans' : '—'}</span></div>
+    <div class="tt-row"><span class="tt-key">Superficie</span><span class="tt-val">${fmtNum(p.SUPERFICIE != null ? Math.round(p.SUPERFICIE/1000) : null)} km²</span></div>`;
+  tooltip.style.display = 'block';
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const rect = document.getElementById('map').getBoundingClientRect();
+  let x = e.originalEvent.clientX - rect.left + 14;
+  let y = e.originalEvent.clientY - rect.top + 14;
+  if (x + 200 > rect.width) x = e.originalEvent.clientX - rect.left - 180;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+function hideTooltip() { tooltip.style.display = 'none'; }
+
+function clearZoneMarkers() { zoneMarkers.forEach(m => m.remove()); zoneMarkers = []; }
+
+function addZoneMarkers() {
+  if (!zonesGJ || !map) return;
+  clearZoneMarkers();
+  zonesGJ.features.forEach(f => {
+    try {
+      const geom = f.geometry;
+      let coords;
+      if (geom.type === 'Polygon') {
+        const ring = geom.coordinates[0];
+        const lngs = ring.map(c => c[0]), lats = ring.map(c => c[1]);
+        coords = [(Math.min(...lngs)+Math.max(...lngs))/2, (Math.min(...lats)+Math.max(...lats))/2];
+      } else if (geom.type === 'MultiPolygon') {
+        let best = geom.coordinates[0][0];
+        let bestArea = 0;
+        geom.coordinates.forEach(poly => {
+          const ring = poly[0];
+          const w = Math.max(...ring.map(c=>c[0])) - Math.min(...ring.map(c=>c[0]));
+          const h = Math.max(...ring.map(c=>c[1])) - Math.min(...ring.map(c=>c[1]));
+          if (w*h > bestArea) { bestArea = w*h; best = ring; }
+        });
+        const lngs = best.map(c=>c[0]), lats = best.map(c=>c[1]);
+        coords = [(Math.min(...lngs)+Math.max(...lngs))/2, (Math.min(...lats)+Math.max(...lats))/2];
+      } else return;
+      const el = document.createElement('div');
+      el.className = 'zone-label';
+      el.textContent = f.properties.ZONE_ID;
+      zoneMarkers.push(new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat(coords).addTo(map));
+    } catch(e) {}
+  });
+}
+
+function addAllLayers() {
+  if (provGJ) {
+    if (!map.getSource('prov')) map.addSource('prov', { type:'geojson', data: provGJ });
+    if (!map.getLayer('prov-line')) {
+      map.addLayer({ id:'prov-line', type:'line', source:'prov',
+        paint:{ 'line-color':'#555', 'line-width':1, 'line-opacity':0.8 }
+      });
+    }
+  }
+
+  if (zonesGJ) {
+    if (!map.getSource('zones')) map.addSource('zones', { type:'geojson', data: zonesGJ });
+
+    if (!map.getLayer('zones-fill')) {
+      const colorExpr = ['match', ['get', 'ZONE_ID']];
+      zonesGJ.features.forEach(f => {
+        colorExpr.push(f.properties.ZONE_ID, f.properties.Couleur_hex || '#888888');
+      });
+      colorExpr.push('#888888');
+
+      map.addLayer({ id:'zones-fill', type:'fill', source:'zones',
+        paint:{ 'fill-color': colorExpr, 'fill-opacity': 0.6 }
+      });
+      map.addLayer({ id:'zones-line', type:'line', source:'zones',
+        paint:{ 'line-color':'#222', 'line-width':1, 'line-opacity':0.8 }
+      });
+      map.addLayer({ id:'zones-selected', type:'line', source:'zones',
+        filter: ['==', ['get','ZONE_ID'], '___NONE___'],
+        paint:{ 'line-color':'#2C3E50', 'line-width':3, 'line-opacity':1 }
+      });
+    }
+
+    map.on('click', 'zones-fill', (e) => {
+      if (!e.features || e.features.length === 0) return;
+      const feat = zonesGJ.features.find(f => f.properties.ZONE_ID === e.features[0].properties.ZONE_ID);
+      selectedId = e.features[0].properties.ZONE_ID;
+      map.setFilter('zones-selected', ['==', ['get','ZONE_ID'], selectedId]);
+      updateInfoBox(feat || null);
+      updateChart(feat || null);
+    });
+
+    map.on('click', (e) => {
+      const feats = map.queryRenderedFeatures(e.point, { layers: ['zones-fill'] });
+      if (feats.length === 0) {
+        selectedId = null;
+        map.setFilter('zones-selected', ['==', ['get','ZONE_ID'], '___NONE___']);
+        updateInfoBox(null);
+        updateChart(null);
+      }
+    });
+
+    map.on('mouseenter', 'zones-fill', (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+      if (e.features && e.features.length > 0) showTooltip(e, e.features[0]);
+    });
+    map.on('mousemove', 'zones-fill', (e) => {
+      if (e.features && e.features.length > 0) { showTooltip(e, e.features[0]); moveTooltip(e); }
+    });
+    map.on('mouseleave', 'zones-fill', () => {
+      map.getCanvas().style.cursor = '';
+      hideTooltip();
+    });
+  }
+
+  addZoneMarkers();
+}
+
+function getStyle(bm) { return bm === 'satellite' ? googleSatStyle() : STYLE_URLS[bm]; }
+
+function switchBasemap(bm) {
+  if (bm === currentBm) return;
+  currentBm = bm;
+  const center = map.getCenter(), zoom = map.getZoom();
+  clearZoneMarkers();
+  map.setStyle(getStyle(bm));
+  map.once('styledata', () => { map.jumpTo({ center, zoom }); addAllLayers(); });
+}
+
+async function initMap() {
+  document.getElementById('loading-msg').textContent = 'Chargement des données…';
+  const [zGJ, pGJ] = await Promise.all([
+    fetch('data/zones.geojson').then(r => r.json()),
+    fetch('data/province.geojson').then(r => r.json()),
+  ]);
+  zonesGJ = zGJ;
+  provGJ  = pGJ;
+
+  let minLng=Infinity, minLat=Infinity, maxLng=-Infinity, maxLat=-Infinity;
+  zonesGJ.features.forEach(f => {
+    const coords = f.geometry.type === 'Polygon'
+      ? f.geometry.coordinates[0]
+      : f.geometry.coordinates.flat(2);
+    coords.forEach(([lng,lat]) => {
+      if (lng<minLng) minLng=lng; if (lng>maxLng) maxLng=lng;
+      if (lat<minLat) minLat=lat; if (lat>maxLat) maxLat=lat;
+    });
+  });
+
+  map = new maplibregl.Map({
+    container: 'map-container',
+    style: getStyle(currentBm),
+    bounds: [[minLng, minLat], [maxLng, maxLat]],
+    fitBoundsOptions: { padding: 20 },
+    attributionControl: false,
+  });
+  map.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
+  map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+
+  map.on('load', () => {
+    addAllLayers();
+    document.getElementById('loading').classList.add('hidden');
+  });
+}
+
+document.querySelectorAll('.bm-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.bm-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); switchBasemap(btn.dataset.bm);
+  });
+});
+
+initChart();
+initMap();
+</script>
+</body>
+</html>
