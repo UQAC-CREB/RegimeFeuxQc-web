@@ -25,69 +25,82 @@
       --text-label:   #374151;
     }
 
-    html, body { height: 100%; font-family: 'Source Sans 3', sans-serif; background: var(--panel-bg); color: var(--text-main); overflow: hidden; }
+    html { height: 100%; overflow: hidden; }
+    body {
+      height: 100%; overflow: hidden;
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--panel-bg); color: var(--text-main);
+      display: flex; flex-direction: column;
+    }
 
     #header {
-      height: 56px; background: var(--header-bg);
+      flex-shrink: 0;
+      height: 48px; background: var(--header-bg);
       display: flex; align-items: center;
-      padding: 0 20px; gap: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      position: relative; z-index: 10;
+      padding: 0 16px; gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;
     }
-    #header .icon { font-size: 22px; flex-shrink: 0; }
+    #header .icon { font-size: 20px; flex-shrink: 0; }
     #header h1 {
-      font-family: 'Oswald', sans-serif; font-size: 13.5px; font-weight: 600;
-      letter-spacing: 1.3px; text-transform: uppercase; color: #fff; line-height: 1.25;
+      font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 600;
+      letter-spacing: 1.2px; text-transform: uppercase; color: #fff; line-height: 1.25;
     }
 
-    #app { display: flex; height: calc(100vh - 56px); }
+    #app { flex: 1; min-height: 0; display: flex; overflow: hidden; }
 
+    /* ── Panel ── */
     #panel {
-      width: 680px; min-width: 680px;
+      width: 340px; min-width: 340px; flex-shrink: 0;
       background: var(--panel-bg);
       border-right: 1px solid var(--panel-border);
       display: flex; flex-direction: column;
-      overflow-y: auto; padding: 18px 16px; gap: 16px;
+      overflow: hidden; padding: 14px 12px; gap: 12px;
     }
-    .panel-section { display: flex; flex-direction: column; gap: 7px; }
+    .panel-section { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+    .panel-section.flex-fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     .panel-label {
-      font-family: 'Oswald', sans-serif; font-size: 11px;
-      letter-spacing: 1.6px; text-transform: uppercase; color: var(--text-muted);
+      font-family: 'Oswald', sans-serif; font-size: 10px;
+      letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-muted);
+      flex-shrink: 0;
     }
 
     #info-box {
       background: var(--box-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 8px; padding: 11px 13px;
+      border-radius: 8px; padding: 10px 12px;
       box-shadow: var(--box-shadow);
-      display: flex; flex-direction: column; gap: 6px; min-height: 72px;
+      display: flex; flex-direction: column; gap: 5px; min-height: 68px;
     }
     .info-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
     .info-key {
-      font-size: 11px; letter-spacing: 0.8px;
+      font-size: 10px; letter-spacing: 0.8px;
       text-transform: uppercase; color: var(--text-muted); white-space: nowrap;
     }
     .info-val {
-      font-family: 'Oswald', sans-serif; font-size: 14px;
+      font-family: 'Oswald', sans-serif; font-size: 13px;
       color: var(--text-main); text-align: right;
     }
-    .info-val.big { font-size: 20px; color: var(--accent); }
+    .info-val.big { font-size: 18px; color: var(--accent); }
     .info-empty {
-      color: var(--text-muted); font-size: 13px;
+      color: var(--text-muted); font-size: 12px;
       text-align: center; margin: auto; line-height: 1.5;
     }
 
+    /* ── Graphique flex ── */
     #chart-wrap {
       background: var(--box-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 8px; padding: 12px; flex: 1;
+      border-radius: 8px; padding: 10px;
       box-shadow: var(--box-shadow);
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column;
     }
-    #myChart { width: 100% !important; }
+    .chart-canvas-wrap { flex: 1; min-height: 0; position: relative; }
+    .chart-canvas-wrap canvas { position: absolute; inset: 0; }
 
-    .divider { border: none; border-top: 1px solid var(--panel-border); }
+    .divider { border: none; border-top: 1px solid var(--panel-border); flex-shrink: 0; }
 
-    /* Tooltip carte */
+    /* ── Tooltip ── */
     #map-tooltip {
       position: absolute; z-index: 20;
       background: rgba(255,255,255,0.97);
@@ -97,15 +110,29 @@
       min-width: 160px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
-    .tt-zone {
-      font-family: 'Oswald', sans-serif; font-size: 18px;
-      font-weight: 600; margin-bottom: 6px;
-    }
+    .tt-zone { font-family: 'Oswald', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 6px; }
     .tt-row { display: flex; justify-content: space-between; gap: 16px; font-size: 12px; margin-top: 3px; }
     .tt-key { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
     .tt-val { font-family: 'Oswald', sans-serif; font-size: 13px; color: var(--text-main); }
 
-    #map { flex: 1; position: relative; }
+    /* ── Resizer ── */
+    #resizer {
+      width: 6px; flex-shrink: 0;
+      background: var(--panel-border);
+      cursor: col-resize; transition: background 0.15s;
+      position: relative; z-index: 5;
+    }
+    #resizer:hover, #resizer.dragging { background: var(--accent); }
+    #resizer::after {
+      content: '';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px; height: 32px;
+      background: rgba(0,0,0,0.15); border-radius: 2px;
+    }
+
+    /* ── Map ── */
+    #map { flex: 1; position: relative; overflow: hidden; }
     #map-container { width: 100%; height: 100%; }
 
     .zone-label {
@@ -116,14 +143,14 @@
     }
 
     #basemap-switch {
-      position: absolute; top: 10px; right: 10px; z-index: 5;
+      position: absolute; top: 8px; right: 8px; z-index: 5;
       display: flex; background: rgba(255,255,255,0.95);
-      border: 1px solid #d1d5db; border-radius: 6px;
-      overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      border: 1px solid #d1d5db; border-radius: 5px;
+      overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
     .bm-btn {
-      padding: 6px 13px; font-family: 'Source Sans 3', sans-serif;
-      font-size: 12px; color: var(--text-muted); cursor: pointer;
+      padding: 5px 10px; font-family: 'Source Sans 3', sans-serif;
+      font-size: 11px; color: var(--text-muted); cursor: pointer;
       border: none; background: transparent;
       border-right: 1px solid #d1d5db;
       transition: background 0.15s, color 0.15s; white-space: nowrap;
@@ -136,21 +163,17 @@
       position: absolute; inset: 0; background: #f9f9f9;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 16px; z-index: 100; transition: opacity 0.5s;
+      gap: 14px; z-index: 100; transition: opacity 0.5s;
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
-    #loading-msg { font-family: 'Oswald', sans-serif; letter-spacing: 2px; font-size: 13px; color: var(--text-muted); text-transform: uppercase; }
+    #loading-msg { font-family: 'Oswald', sans-serif; letter-spacing: 2px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; }
     .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top-color: var(--accent);
-      border-radius: 50%; animation: spin 0.8s linear infinite;
+      width: 36px; height: 36px; border: 3px solid #e5e7eb;
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    #panel::-webkit-scrollbar { width: 5px; }
-    #panel::-webkit-scrollbar-track { background: transparent; }
-    #panel::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+    #panel::-webkit-scrollbar { display: none; }
   </style>
 </head>
 <body>
@@ -177,14 +200,18 @@
 
     <hr class="divider" />
 
-    <div class="panel-section" style="flex:1;">
-      <span class="panel-label">Superficie (km²)</span>
+    <div class="panel-section flex-fill">
+      <span class="panel-label">Superficie (km² × 1 000)</span>
       <div id="chart-wrap">
-        <canvas id="myChart" height="260"></canvas>
+        <div class="chart-canvas-wrap">
+          <canvas id="myChart"></canvas>
+        </div>
       </div>
     </div>
 
   </div>
+
+  <div id="resizer"></div>
 
   <div id="map">
     <div id="map-container"></div>
@@ -237,14 +264,18 @@ function initChart() {
       datasets: [{ data: [0], backgroundColor: '#d1d5db', borderRadius: 4 }]
     },
     options: {
-      responsive: true, maintainAspectRatio: true,
+      responsive: true, maintainAspectRatio: false,
       animation: { duration: 300 },
       plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: c => fmtNum(c.raw) + ' km²' }
+        callbacks: { label: c => new Intl.NumberFormat('fr-CA').format(Math.round(c.raw * 1000)) + ' km²' }
       }},
       scales: {
-        x: { ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:11, weight:'600' } }, grid: { color:'rgba(0,0,0,0.05)' } },
-        y: { ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:10 }, callback: v => fmtNum(v) }, grid: { color:'rgba(0,0,0,0.06)' } }
+        x: { ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:10, weight:'600' } }, grid: { color:'rgba(0,0,0,0.05)' } },
+        y: {
+          min: 0, max: 100,
+          ticks: { color:'#6b7280', font:{ family:'Source Sans 3', size:9 }, callback: v => v },
+          grid: { color:'rgba(0,0,0,0.06)' }
+        }
       }
     }
   });
@@ -275,7 +306,7 @@ function updateInfoBox(zone) {
   box.innerHTML = `
     <div class="info-row"><span class="info-key">Zone</span><span class="info-val big">${p.ZONE_ID || '—'}</span></div>
     <div class="info-row"><span class="info-key">Cycle de feu</span><span class="info-val">${p.CYCLE_FEU != null ? p.CYCLE_FEU + ' ans' : '—'}</span></div>
-    <div class="info-row"><span class="info-key">Superficie</span><span class="info-val">${fmtNum(p.SUPERFICIE != null ? p.SUPERFICIE / 1000 : null)} km²</span></div>`;
+    <div class="info-row"><span class="info-key">Superficie</span><span class="info-val">${p.SUPERFICIE != null ? new Intl.NumberFormat('fr-CA').format(Math.round(p.SUPERFICIE)) + ' km²' : '—'}</span></div>`;
 }
 
 const tooltip = document.getElementById('map-tooltip');
@@ -285,7 +316,7 @@ function showTooltip(e, feat) {
   tooltip.innerHTML = `
     <div class="tt-zone" style="color:${col}">${p.ZONE_ID || '—'}</div>
     <div class="tt-row"><span class="tt-key">Cycle de feu</span><span class="tt-val">${p.CYCLE_FEU != null ? p.CYCLE_FEU + ' ans' : '—'}</span></div>
-    <div class="tt-row"><span class="tt-key">Superficie</span><span class="tt-val">${fmtNum(p.SUPERFICIE != null ? Math.round(p.SUPERFICIE/1000) : null)} km²</span></div>`;
+    <div class="tt-row"><span class="tt-key">Superficie</span><span class="tt-val">${p.SUPERFICIE != null ? new Intl.NumberFormat('fr-CA').format(Math.round(p.SUPERFICIE)) + ' km²' : '—'}</span></div>`;
   tooltip.style.display = 'block';
   moveTooltip(e);
 }
@@ -341,17 +372,14 @@ function addAllLayers() {
       });
     }
   }
-
   if (zonesGJ) {
     if (!map.getSource('zones')) map.addSource('zones', { type:'geojson', data: zonesGJ });
-
     if (!map.getLayer('zones-fill')) {
       const colorExpr = ['match', ['get', 'ZONE_ID']];
       zonesGJ.features.forEach(f => {
         colorExpr.push(f.properties.ZONE_ID, f.properties.Couleur_hex || '#888888');
       });
       colorExpr.push('#888888');
-
       map.addLayer({ id:'zones-fill', type:'fill', source:'zones',
         paint:{ 'fill-color': colorExpr, 'fill-opacity': 0.6 }
       });
@@ -363,7 +391,6 @@ function addAllLayers() {
         paint:{ 'line-color':'#2C3E50', 'line-width':3, 'line-opacity':1 }
       });
     }
-
     map.on('click', 'zones-fill', (e) => {
       if (!e.features || e.features.length === 0) return;
       const feat = zonesGJ.features.find(f => f.properties.ZONE_ID === e.features[0].properties.ZONE_ID);
@@ -372,7 +399,6 @@ function addAllLayers() {
       updateInfoBox(feat || null);
       updateChart(feat || null);
     });
-
     map.on('click', (e) => {
       const feats = map.queryRenderedFeatures(e.point, { layers: ['zones-fill'] });
       if (feats.length === 0) {
@@ -382,7 +408,6 @@ function addAllLayers() {
         updateChart(null);
       }
     });
-
     map.on('mouseenter', 'zones-fill', (e) => {
       map.getCanvas().style.cursor = 'pointer';
       if (e.features && e.features.length > 0) showTooltip(e, e.features[0]);
@@ -395,7 +420,6 @@ function addAllLayers() {
       hideTooltip();
     });
   }
-
   addZoneMarkers();
 }
 
@@ -440,7 +464,6 @@ async function initMap() {
   map.addControl(new maplibregl.AttributionControl({ compact:true }), 'bottom-right');
   map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-
   map.on('load', () => {
     addAllLayers();
     document.getElementById('loading').classList.add('hidden');
@@ -456,6 +479,34 @@ document.querySelectorAll('.bm-btn').forEach(btn => {
 
 initChart();
 initMap();
+
+// ── Resizable panel ──
+(function() {
+  const resizer = document.getElementById('resizer');
+  const panel   = document.getElementById('panel');
+  let dragging = false, startX = 0, startW = 0;
+  resizer.addEventListener('mousedown', (e) => {
+    dragging = true; startX = e.clientX; startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const newW = Math.min(Math.max(startW + (e.clientX - startX), 200), window.innerWidth * 0.7);
+    panel.style.width = newW + 'px';
+    panel.style.minWidth = newW + 'px';
+    if (map) map.resize();
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (map) map.resize();
+  });
+})();
 </script>
 </body>
 </html>
