@@ -219,7 +219,6 @@
     <div id="basemap-switch">
       <button class="bm-btn active" data-bm="neutre">Neutre</button>
       <button class="bm-btn"        data-bm="satellite">Satellite</button>
-      <button class="bm-btn"        data-bm="sombre">Sombre</button>
     </div>
   </div>
 </div>
@@ -241,7 +240,6 @@ function googleSatStyle() {
 const STYLE_URLS = {
   neutre:    'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
   satellite: googleSatStyle(),
-  sombre:    'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
 };
 
 let map, chartInst;
